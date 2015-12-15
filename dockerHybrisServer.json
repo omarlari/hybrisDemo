@@ -59,7 +59,7 @@
                 ],
                 "InstanceType": {"Ref" : "size"},
                 "InstanceInitiatedShutdownBehavior": "stop",
-                "KeyName": "mck",
+                "KeyName": "hybris",
                 "NetworkInterfaces": [
                     {
                         "AssociatePublicIpAddress": "true",

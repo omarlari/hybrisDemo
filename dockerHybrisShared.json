@@ -113,6 +113,12 @@
                         "CidrIp": "68.101.116.56/32",
                         "FromPort": "8443",
                         "ToPort": "8443"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "CidrIp": "10.99.0.0/16",
+                        "FromPort": "22",
+                        "ToPort": "22"
                     }
                 ]
             }
