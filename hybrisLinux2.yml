@@ -1,0 +1,13 @@
+---
+##ansible-playbook node.yml -i dockerhosts
+
+- hosts: dockerhosts
+  remote_user: ec2-user
+  sudo: yes
+
+  tasks:
+
+  - name: start hybris cluster
+    shell: ./startAccClusterWithLB.sh
+    args: 
+        chdir: ~/Scenarios/Accelerator
