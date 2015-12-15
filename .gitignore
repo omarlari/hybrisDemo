@@ -24,10 +24,6 @@ Desktop.ini
 ### Linux ###
 *~
 
-### Node ###
-# Logs
-logs
-*.log
 
 # Deps
 node_modules
