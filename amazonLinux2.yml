@@ -1,0 +1,68 @@
+- hosts: localhost
+  remote_user: ec2-user
+  sudo: no
+
+  tasks:
+
+  - name: unzip hybris package
+    unarchive: src=~/hybris.zip dest=~/ copy=no
+
+  - name: unzip docker package
+    unarchive: src=~/platform-docker-demo-5.7.0.0-RC3.zip dest=~/ copy=no
+
+  - name: set ant env shell
+    shell: . ./setantenv.sh
+    args:
+        chdir: ~/hybris/bin/platform
+
+  - name: ant clean all
+    shell: ~/hybris/bin/platform/apache-ant-1.9.1/bin/ant clean all -Dinput.template=develop
+    args:
+        chdir: ~/hybris/bin/platform
+
+  - name: prepare production packages
+    shell: ~/hybris/bin/platform/apache-ant-1.9.1/bin/ant production -Dproduction.legacy.mode=false -Dproduction.include.tomcat=false -Dtomcat.legacy.deployment=false
+    args:
+        chdir: ~/hybris/bin/platform
+
+  - name: move platform zip files
+    shell: cp ~/hybris/temp/hybris/hybrisServer/hybrisServer-*.zip ~/Images/04_platform/hybrisServer
+
+  - name: move zip files to docker images folder
+    shell: cp -R ~/hybris/bin/ext-commerce/solrfacetsearch/resources/solr/server ~/Images/05_solr_pre_5_7/solrFromPlatform
+
+  - name: build docker base image
+    shell: ./build.sh
+    args: 
+        chdir: ~/Images/01_base
+
+  - name: build docker tomcat image
+    shell: ./build.sh
+    args: 
+        chdir: ~/Images/02_tomcat
+
+  - name: build docker server image
+    shell: ./build.sh
+    args: 
+        chdir: ~/Images/03_server_pre_5_7
+
+  - name: build docker accelerator image
+    shell: ./build.sh y.i.accelerator
+    args: 
+        chdir: ~/Images/04_platform
+
+  - name: build docker solr image
+    shell: ./build.sh
+    args: 
+        chdir: ~/Images/05_solr_pre_5_7
+
+  - name: build docker mysql image
+    shell: ./build.sh 
+    args: 
+        chdir: ~/Images/06_mysql
+
+  - name: build docker apache image
+    shell: ./build.sh 
+    args: 
+        chdir: ~/Images/07_apache
+

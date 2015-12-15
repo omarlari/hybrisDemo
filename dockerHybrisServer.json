@@ -1,0 +1,82 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "",
+    "Parameters": {
+        "dockerHybrisSecurityGroup": {
+            "Description": "dockerHybris sg id",
+            "Type": "String",
+            "Default": "",
+            "ConstraintDescription": ""
+        },
+
+        "ami": {
+            "Description": "dockerHybris ami",
+            "Type": "String",
+            "Default": "",
+            "ConstraintDescription": ""
+        },
+
+        "subnet": {
+            "Description": "dockerHybris ami",
+            "Type": "String",
+            "Default": "",
+            "ConstraintDescription": ""
+        },
+
+        "size": {
+            "Description": "instance size",
+            "Type": "String",
+            "Default": "",
+            "ConstraintDescription": ""
+        },
+        
+        "artifactReaderRole": {
+            "Description": "Instance Profile",
+            "Type": "String",
+            "Default": "",
+            "ConstraintDescription": ""
+        }
+
+    },
+    "Resources": {
+        "dockerHybrisInstance1": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "ImageId": {
+                    "Ref": "ami"
+                },
+                "IamInstanceProfile": {
+                    "Ref": "artifactReaderRole"
+                },
+                "BlockDeviceMappings": [
+                    {
+                        "DeviceName": "/dev/xvda",
+                        "Ebs": {
+                            "VolumeSize": "40",
+                            "DeleteOnTermination" : "false"
+                        }
+                    }
+                ],
+                "InstanceType": {"Ref" : "size"},
+                "InstanceInitiatedShutdownBehavior": "stop",
+                "KeyName": "mck",
+                "NetworkInterfaces": [
+                    {
+                        "AssociatePublicIpAddress": "true",
+                        "DeviceIndex": "0",
+                        "GroupSet": [
+                            {
+                                "Ref": "dockerHybrisSecurityGroup"
+                            }
+                        ],
+                        "SubnetId": {
+                            "Ref": "subnet"
+                        }
+                    }
+                ]
+            }
+        }
+
+    },
+    "Outputs": {}
+}

@@ -1,0 +1,206 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "",
+    "Parameters": {
+        "vpc": {
+            "Description": "VpcId",
+            "Type": "String",
+            "Default": "",
+            "ConstraintDescription": ""
+        },
+        "artifactS3Bucket": {
+            "Description": "bucket of s3 artifacts",
+            "Type": "String",
+            "Default": "",
+            "ConstraintDescription": ""
+        }
+    },
+    "Resources": {
+        "dockerHybrisSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "dockerHybris security group",
+                "VpcId": {
+                    "Ref": "vpc"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "CidrIp": "143.112.144.129/32",
+                        "FromPort": "80",
+                        "ToPort": "80"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "CidrIp": "143.112.144.129/32",
+                        "FromPort": "443",
+                        "ToPort": "443"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "CidrIp": "143.112.144.129/32",
+                        "FromPort": "22",
+                        "ToPort": "22"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "CidrIp": "143.112.144.129/32",
+                        "FromPort": "8080",
+                        "ToPort": "8080"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "CidrIp": "143.112.144.129/32",
+                        "FromPort": "8443",
+                        "ToPort": "8443"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "CidrIp": "73.231.218.162/32",
+                        "FromPort": "80",
+                        "ToPort": "80"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "CidrIp": "73.231.218.162/32",
+                        "FromPort": "443",
+                        "ToPort": "443"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "CidrIp": "73.231.218.162/32",
+                        "FromPort": "22",
+                        "ToPort": "22"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "CidrIp": "73.231.218.162/32",
+                        "FromPort": "8080",
+                        "ToPort": "8080"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "CidrIp": "73.231.218.162/32",
+                        "FromPort": "8443",
+                        "ToPort": "8443"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "CidrIp": "68.101.116.56/32",
+                        "FromPort": "80",
+                        "ToPort": "80"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "CidrIp": "68.101.116.56/32",
+                        "FromPort": "443",
+                        "ToPort": "443"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "CidrIp": "68.101.116.56/32",
+                        "FromPort": "22",
+                        "ToPort": "22"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "CidrIp": "68.101.116.56/32",
+                        "FromPort": "8080",
+                        "ToPort": "8080"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "CidrIp": "68.101.116.56/32",
+                        "FromPort": "8443",
+                        "ToPort": "8443"
+                    }
+                ]
+            }
+        },
+
+        "dockerHybrisRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "ec2.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                }
+            }
+        },
+
+        "dockerHybrisPolicy1": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "s3All",
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "s3:List*",
+                                "s3:Get*"
+                            ],
+                            "Resource": { "Fn::Join" : ["", ["arn:aws:s3:::", {"Ref":"artifactS3Bucket"},"/*"]]}
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "s3:List*",
+                                "s3:Get*"
+                            ],
+                            "Resource": { "Fn::Join" : ["", ["arn:aws:s3:::", {"Ref":"artifactS3Bucket"}]]}
+                        }
+                    ]
+                },
+                "Roles": [
+                    {
+                        "Ref": "dockerHybrisRole"
+                    }
+                ]
+            }
+        },
+
+        "dockerHyrbisInstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/",
+                "Roles": [
+                    {
+                        "Ref": "dockerHybrisRole"
+                    }
+                ]
+            }
+        }
+
+
+    },
+    "Outputs": {
+        "dockerHybrisSecurityGroup": {
+            "Value": {
+                "Ref": "dockerHybrisSecurityGroup"
+            },
+            "Description": "dockerHybris sg ids"
+        },
+
+        "artifactReaderRole": {
+            "Value": {
+                "Ref": "dockerHyrbisInstanceProfile"
+            },
+            "Description": "dockerHybris sg ids"
+        }
+
+    }
+}

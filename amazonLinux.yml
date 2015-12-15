@@ -1,0 +1,46 @@
+---
+##ansible-playbook node.yml -i localhost
+
+- hosts: localhost
+  remote_user: ec2-user
+
+  tasks:
+
+  - name: download jre8 from s3 bucket
+    s3: bucket=mckartifacts001 object=/jre-8u60-linux-x64.rpm dest=~/jre-8u60-linux-x64.rpm mode=get
+
+  - name: download dockerfiles
+    s3: bucket=mckartifacts001 object=/platform-docker-demo-5.7.0.0-RC3.zip dest=~/platform-docker-demo-5.7.0.0-RC3.zip mode=get
+
+  - name: download hybris from s3 bucket
+    command: /usr/bin/aws s3 cp s3://mckartifacts001/hybris-commerce-suite-5.6.0.2.zip ~/hybris.zip
+
+- hosts: localhost
+  remote_user: ec2-user
+  become: yes
+  become_method: sudo
+
+  tasks:
+
+  - name: install jre8
+    yum: 
+        name: /home/ec2-user/jre-8u60-linux-x64.rpm 
+        state: present 
+
+- hosts: localhost
+  remote_user: ec2-user
+  sudo: yes
+
+  tasks:
+
+  - name: yum update all
+    yum: name=* state=latest
+
+  - name: install docker
+    yum: name=docker state=latest
+
+  - name: start docker service
+    service: name=docker state=started
+
+  - name: add ec2-user to docker group
+    user: name=ec2-user groups=docker append=yes

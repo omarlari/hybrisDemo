@@ -1,0 +1,53 @@
+---
+# ansible-playbook main2.yml -i inventory -e env=$env
+- name: Provision nodejs demo
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+     AmiId: "{{ lookup('file', '~/nodeParameters/ami.id') }}"
+
+
+  vars_files:
+  - vars/{{ env }}.yml
+
+  tasks:
+
+  - name: Provision demo shared resources
+    cloudformation:
+      stack_name: "demoNode-sharedResources"
+      state: "present"
+      disable_rollback: true
+      region: "us-west-2"
+      template: "demoShared.json"
+      template_parameters:
+        secondOctect: "{{SecondOctect}}"
+        vpc: "{{ lookup('cloudformation', 'us-west-2/cidrBlock99-vpc/output/vpc') }}"
+        publicRouteTable: "{{ lookup('cloudformation', 'us-west-2/cidrBlock99-vpc/output/publicRouteTable') }}"
+      tags:
+        Stack: "ansible-cloudformation"
+        Env: "Engineering"
+    register: demoShared
+
+  - name: Provision demo cluster
+    cloudformation:
+      stack_name: "{{stackPrefix}}-serverCluster"
+      state: "present"
+      disable_rollback: true
+      region: "us-west-2"
+      template: "demoInstances.json"
+      template_parameters:
+        imageId: "{{AmiId}}"
+        instanceType: "{{Ec2InstanceType}}"
+        nodeCount: "{{instanceCount}}"
+        subnetA: "{{demoShared.stack_outputs.demoAppNodejsSubnetA}}"
+        subnetB: "{{demoShared.stack_outputs.demoAppNodejsSubnetB}}"
+        subnetC: "{{demoShared.stack_outputs.demoAppNodejsSubnetC}}"
+        demoAppElbSg: "{{demoShared.stack_outputs.demoAppElbSg}}"
+        demoAppNodeSg: "{{demoShared.stack_outputs.demoAppNodeSg}}"
+
+      tags:
+        Stack: "ansible-cloudformation"
+        Env: "Engineering"
+    register: demoInstances

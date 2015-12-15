@@ -1,0 +1,44 @@
+---
+# ansible-playbook main2.yml -i inventory -e env=$env
+- name: Provision Docker host for Hybris
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars_files:
+  - vars/{{ env }}.yml
+
+  tasks:
+
+  - name: Provision shared resources
+    cloudformation:
+      stack_name: "{{stackPrefix}}-sharedResources"
+      state: "present"
+      disable_rollback: true
+      region: "us-west-2"
+      template: "dockerHybrisShared.json"
+      template_parameters:
+        artifactS3Bucket : "{{artifactS3Bucket}}"
+        vpc: "{{ lookup('cloudformation', 'us-west-2/cidrBlock99-vpc/output/vpc') }}"
+      tags:
+        Stack: "ansible-cloudformation"
+        Env: "Engineering"
+    register: simpleServerShared
+
+  - name: simple server
+    cloudformation:
+      stack_name: "{{stackPrefix}}-serverCluster"
+      state: "present"
+      disable_rollback: true
+      region: "us-west-2"
+      template: "dockerHybrisServer.json"
+      template_parameters:
+        dockerHybrisSecurityGroup: "{{simpleServerShared.stack_outputs.dockerHybrisSecurityGroup}}"
+        ami: "{{ami}}"
+        size: "{{size}}"
+        artifactReaderRole : "{{simpleServerShared.stack_outputs.artifactReaderRole}}"
+        subnet: "{{ lookup('cloudformation', 'us-west-2/pipeline-sharedResources/output/pipelineSubnetAzA') }}"
+      tags:
+        Stack: "ansible-cloudformation"
+        Env: "Engineering"
+    register: simpleServer

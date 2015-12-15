@@ -1,0 +1,9 @@
+---
+#https://discovery.etcd.io/new?size=3
+#vpcTemplateName: "singleCoreServer"
+stackPrefix: hybrisDockerFullyAutomated
+#EC2KeyPair: mck
+#SecondOctect: "99"
+ami: "ami-f0091d91"
+size: "t2.large"
+artifactS3Bucket: "mckartifacts001"

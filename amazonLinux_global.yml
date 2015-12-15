@@ -1,0 +1,113 @@
+---
+##ansible-playbook node.yml -i dockerhosts
+
+- hosts: dockerhosts
+  remote_user: ec2-user
+
+  tasks:
+
+  - name: download jre8 from s3 bucket
+    s3: bucket=mckartifacts001 object=/jre-8u60-linux-x64.rpm dest=~/jre-8u60-linux-x64.rpm mode=get
+
+  - name: download dockerfiles
+    s3: bucket=mckartifacts001 object=/platform-docker-demo-5.7.0.0-RC3.zip dest=~/platform-docker-demo-5.7.0.0-RC3.zip mode=get
+
+  - name: download hybris from s3 bucket
+    command: /usr/bin/aws s3 cp s3://mckartifacts001/hybris-commerce-suite-5.6.0.2.zip ~/hybris.zip
+
+- hosts: dockerhosts
+  remote_user: ec2-user
+  become: yes
+  become_method: sudo
+
+  tasks:
+
+  - name: install jre8
+    yum: 
+        name: /home/ec2-user/jre-8u60-linux-x64.rpm 
+        state: present 
+
+- hosts: dockerhosts
+  remote_user: ec2-user
+  sudo: yes
+
+  tasks:
+
+  - name: yum update all
+    yum: name=* state=latest
+
+  - name: install docker
+    yum: name=docker state=latest
+
+  - name: start docker service
+    service: name=docker state=started
+
+  - name: add ec2-user to docker group
+    user: name=ec2-user groups=docker append=yes
+
+- hosts: dockerhosts
+  remote_user: ec2-user
+  sudo: no
+
+  tasks:
+
+  - name: unzip hybris package
+    unarchive: src=~/hybris.zip dest=~/ copy=no
+
+  - name: unzip docker package
+    unarchive: src=~/platform-docker-demo-5.7.0.0-RC3.zip dest=~/ copy=no
+
+  - name: set ant env shell
+    shell: . ./setantenv.sh
+    args:
+        chdir: ~/hybris/bin/platform
+
+  - name: ant clean all
+    shell: ~/hybris/bin/platform/apache-ant-1.9.1/bin/ant clean all -Dinput.template=develop
+    args:
+        chdir: ~/hybris/bin/platform
+
+  - name: prepare production packages
+    shell: ~/hybris/bin/platform/apache-ant-1.9.1/bin/ant production -Dproduction.legacy.mode=false -Dproduction.include.tomcat=false -Dtomcat.legacy.deployment=false
+    args:
+        chdir: ~/hybris/bin/platform
+
+  - name: move zip files to docker images folder
+    shell: cp ~/hybris/temp/hybris/hybrisServer/hybrisServer-*.zip ~/Images/04_platform/hybrisServer
+    shell: cp -R ~/hybris/bin/ext-commerce/solrfacetsearch/resources/solr/server ~/Images/05_solr_pre_5_7/solrFromPlatform
+
+  - name: build docker base image
+    shell: ./build.sh
+    args: 
+        chdir: ~/Images/01_base
+
+  - name: build docker tomcat image
+    shell: ./build.sh
+    args: 
+        chdir: ~/Images/02_tomcat
+
+  - name: build docker server image
+    shell: ./build.sh
+    args: 
+        chdir: ~/Images/03_server_pre_5_7
+
+  - name: build docker accelerator image
+    shell: ./build.sh y.i.accelerator
+    args: 
+        chdir: ~/Images/04_platform
+
+  - name: build docker solr image
+    shell: ./build.sh
+    args: 
+        chdir: ~/Images/05_solr_pre_5_7
+
+  - name: build docker mysql image
+    shell: ./build.sh 
+    args: 
+        chdir: ~/Images/06_mysql
+
+  - name: build docker apache image
+    shell: ./build.sh 
+    args: 
+        chdir: ~/Images/07_apache
+
