@@ -3,11 +3,10 @@
 
 - hosts: dockerhosts
   remote_user: ec2-user
-  sudo: yes
 
   tasks:
 
   - name: start hybris cluster
-    shell: ./startAccClusterWithLB.sh
+    shell: sudo ./startAccClusterWithLB.sh
     args: 
         chdir: ~/Scenarios/Accelerator
