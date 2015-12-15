@@ -1,4 +1,4 @@
-- hosts: localhost
+- hosts: dockerhosts
   remote_user: ec2-user
   sudo: no
 
